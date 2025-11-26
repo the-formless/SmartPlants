@@ -18,6 +18,13 @@ void hal_gpio_init(void) {
 void hal_gpio_set_mode(uint8_t port, uint8_t pin, uint8_t mode) {
     uint8_t pin_mask = (uint8_t)(1 << pin);
     
+    // Set DDR first: 1=output, 0=input
+    if (mode & 0x10) {  // Output modes have bit 4 set
+        GPIO_DDR(port) |= pin_mask;
+    } else {
+        GPIO_DDR(port) &= (uint8_t)~pin_mask;
+    }
+    
     // Clear current mode
     GPIO_CR1(port) &= (uint8_t)~pin_mask;
     GPIO_CR2(port) &= (uint8_t)~pin_mask;
