@@ -16,6 +16,6 @@ int main(void)
     while (1)
     {
         hal_gpio_toggle(GPIOC, 4);
-        delay_ms(300);
+        delay_ms(1000);
     }
 }
