@@ -140,12 +140,12 @@ _main:
 00102$:
 ;	main.c: 20: led_toggle();
 	call	_led_toggle
-;	main.c: 21: delay_ms(1000);
+;	main.c: 22: delay_ms(1000);
 	ldw	x, #0x03e8
 	call	_delay_ms
 	jra	00102$
-;	main.c: 24: return 0;
-;	main.c: 25: }
+;	main.c: 25: return 0;
+;	main.c: 26: }
 	ret
 	.area CODE
 	.area CONST

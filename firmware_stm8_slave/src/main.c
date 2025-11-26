@@ -18,6 +18,7 @@ int main(void) {
     // Main loop - blink LED every 1000ms
     while (1) {
         led_toggle();
+        // led_off();
         delay_ms(1000);
     }
     

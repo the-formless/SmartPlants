@@ -140,12 +140,12 @@
       00805C                        140 00102$:
                                     141 ;	main.c: 20: led_toggle();
       00805C CD 00 00         [ 4]  142 	call	_led_toggle
-                                    143 ;	main.c: 21: delay_ms(1000);
+                                    143 ;	main.c: 22: delay_ms(1000);
       00805F AE 03 E8         [ 2]  144 	ldw	x, #0x03e8
       008062 CD 80 2D         [ 4]  145 	call	_delay_ms
       008065 20 F5            [ 2]  146 	jra	00102$
-                                    147 ;	main.c: 24: return 0;
-                                    148 ;	main.c: 25: }
+                                    147 ;	main.c: 25: return 0;
+                                    148 ;	main.c: 26: }
       008067 81               [ 4]  149 	ret
                                     150 	.area CODE
                                     151 	.area CONST
