@@ -1,26 +1,21 @@
 #include <stdint.h>
 #include "../inc/hal_gpio.h"
-#include "../inc/led.h"
 // Simple delay function (approximate for 16MHz STM8)
-void delay_ms(uint16_t ms) {
-    volatile uint16_t i, j;
-    for (i = 0; i < ms; i++) {
-        for (j = 0; j < 1600; j++) {  // Approximate 1ms at 16MHz
+void delay_ms(uint16_t ms)
+{
+    for (uint16_t i = 0; i < ms; i++)
+        for (uint16_t j = 0; j < 1600; j++)
             __asm__("nop");
-        }
-    }
 }
-int main(void) {
-    // Initialize peripherals
-    hal_gpio_init();
-    led_init();
-    
-    // Main loop - blink LED every 1000ms
-    while (1) {
-        led_toggle();
-        // led_off();
-        delay_ms(1000);
+
+int main(void)
+{
+    // LED = PC4
+    hal_gpio_init(GPIOC, 4, GPIO_OUTPUT);
+
+    while (1)
+    {
+        hal_gpio_toggle(GPIOC, 4);
+        delay_ms(300);
     }
-    
-    return 0;
 }
