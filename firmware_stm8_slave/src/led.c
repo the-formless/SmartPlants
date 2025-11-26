@@ -1,7 +1,7 @@
 #include "../inc/led.h"
 #include "../inc/hal_gpio.h"
 void led_init(void) {
-    hal_gpio_set_mode(LED_PORT, LED_PIN, GPIO_MODE_OUTPUT_PP);
+    hal_gpio_set_mode(LED_PORT, LED_PIN, GPIO_MODE_OUTPUT_PP_SLOW);
     led_off();
 }
 void led_on(void) {
