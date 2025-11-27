@@ -84,6 +84,11 @@ typedef struct {
 #define PD5 ((GPIO_Pin){GPIOD, 5})
 #define PD6 ((GPIO_Pin){GPIOD, 6})
 
+// added macros for True Open Drain pin checking 
+#define IS_TRUE_OPEN_DRAIN_PIN(port, pin) \
+    ((port == GPIOB) && ((pin == 4) || (pin == 5)))
+
+
 //-----
 //GPIO HAL Functions
 //-----

@@ -5,8 +5,10 @@ void GPIO_InitPin(GPIO_Pin pin , GPIO_InitTypeDef * config) {
     volatile GPIO_Port * port = pin.port;
     uint8_t pin_mask = GPIO_PIN(pin.pin);
 
+    uint8_t pin_number = pin.pin;
+
     //--    
-    //set mode: input/output
+    //STEP 1: set mode: input/output
     //--
     if (config->mode == GPIO_MODE_OUTPUT) {
         port->DDR |= pin_mask; //set as output
@@ -14,16 +16,23 @@ void GPIO_InitPin(GPIO_Pin pin , GPIO_InitTypeDef * config) {
         port->DDR &= ~pin_mask; //set as input
     }
 
+
+    //----  
+    //Step 2: Detect PB4/PPB and override config if needed
+    //----
+    uint8_t force_open_drain = IS_TRUE_OPEN_DRAIN_PIN(port, pin_number);
+
+
     //----  
     //set pull-up for input
-    //push-pull/Open-drain fot output
+    //push-pull/Open-drain for output
     //----
     // -------------------------
     // CR1 (Pull-up OR Push-pull)
     // -------------------------
     if (config->mode == GPIO_MODE_INPUT)
     {
-        // Input mode
+        // Input mode: CR1 = pull-up/ floating
         if (config->pull == GPIO_PULLUP)
             port->CR1 |= pin_mask;
         else
@@ -31,20 +40,28 @@ void GPIO_InitPin(GPIO_Pin pin , GPIO_InitTypeDef * config) {
     }
     else
     {
-        // Output mode
-        if (config->outputType == GPIO_OUTPUT_PUSHPULL)
-            port->CR1 |= pin_mask;
-        else
+        // OUTPUT: CR1 = push-pull or open-drain
+        if (force_open_drain)
+        {
+            // Auto override → PB4/PB5 must be open drain
             port->CR1 &= ~pin_mask;
+        }
+        else {
+            if (config->outputType == GPIO_OUTPUT_PUSHPULL)
+                port->CR1 |= pin_mask;
+            else
+            port->CR1 &= ~pin_mask;
+        }
+        
     }
 
     //----
     //Speed: Slow/Fast
     //----
-    if(config -> speed == GPIO_SPEED_FAST) {
-        port -> CR2 |= pin_mask; //Fast
+    if(config->mode == GPIO_MODE_OUTPUT && config->speed == GPIO_SPEED_FAST) {
+        port->CR2 |= pin_mask; //Fast
     } else {
-        port -> CR2 &= ~pin_mask; //Slow
+        port->CR2 &= ~pin_mask; //Slow
     }
 }
 
