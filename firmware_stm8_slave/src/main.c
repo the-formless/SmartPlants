@@ -1,19 +1,13 @@
 #include "gpio.h"
 #include "clock.h"
-
-void delay_ms(uint16_t ms)
-{
-    while (ms--) {
-        // Each iteration ~1ms at 16MHz
-        for (uint16_t i = 0; i < 1600; i++) {
-            __asm__("nop");
-        }
-    }
-}
+#include "tim4.h"
 
 void main(void){
     //Initialize System Clock
     clock_init();
+    //Initialize Timer4 for delays
+    // enabling tim4 produces a flickering(led) out on TIM2 pins PA3 and PC5
+    tim4_init();
 
     GPIO_InitTypeDef led_config = {
         .mode = GPIO_MODE_OUTPUT,
@@ -62,7 +56,7 @@ void main(void){
         GPIO_WritePin(PD5, 1);
         GPIO_WritePin(PD6, 1);
 
-        delay_ms(500);
+        tim4_delay(500);
 
         GPIO_WritePin(PD2, 0);
         GPIO_WritePin(PA1, 0);
@@ -80,6 +74,6 @@ void main(void){
         GPIO_WritePin(PD5, 0);
         GPIO_WritePin(PD6, 0);
 
-        delay_ms(500);
+        tim4_delay(500);
      }
 }
