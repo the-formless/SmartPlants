@@ -1,38 +1,63 @@
-# STM8 Makefile for SmartPlants Firmware
-# Target MCU: STM8S003F3P6
-TARGET = main
-MCU = stm8s003f3
-SDCC = sdcc
-OBJCOPY = objcopy
+# ===============================
+# STM8 Makefile (Updated)
+# Target: STM8S003F3
+# ===============================
+
+# Tools
+SDCC    = sdcc
 STFLASH = st-flash
 
+# Directories
+SRC_DIR   = src
+INC_DIR   = inc
+BUILD_DIR = Builds
+
+# Target output
+TARGET = $(BUILD_DIR)/main
+
 # Source files
-SRC_DIR = src
-INC_DIR = inc
-SRCS = $(SRC_DIR)/main.c $(SRC_DIR)/hal_gpio.c $(SRC_DIR)/led.c
-HEADERS = $(INC_DIR)/hal_gpio.h $(INC_DIR)/led.h
-OBJS = $(SRC_DIR)/main.rel $(SRC_DIR)/hal_gpio.rel $(SRC_DIR)/led.rel
+SRCS = $(SRC_DIR)/main.c \
+       $(SRC_DIR)/gpio.c \
+       $(SRC_DIR)/clock.c
+
+# Header files
+HEADERS = $(INC_DIR)/gpio.h \
+          $(INC_DIR)/clock.h
+
+# Object files → Builds/*.rel
+OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.rel)
 
 # Compiler flags
 CFLAGS = -mstm8 --std-c99 -I$(INC_DIR) --opt-code-size
 LDFLAGS = -mstm8 -lstm8
 
-# Build targets
+# ===============================
+# Build Rules
+# ===============================
+
+# Default target
 all: $(TARGET).ihx
 
+# Ensure build directory exists
+$(BUILD_DIR):
+	mkdir -p $(BUILD_DIR)
+
+# Linking into .ihx
 $(TARGET).ihx: $(OBJS)
 	$(SDCC) $(LDFLAGS) -o $(TARGET).ihx $(OBJS)
 
-$(SRC_DIR)/%.rel: $(SRC_DIR)/%.c $(HEADERS)
+# Compile .c → .rel inside Builds/
+$(BUILD_DIR)/%.rel: $(SRC_DIR)/%.c $(HEADERS) | $(BUILD_DIR)
 	$(SDCC) $(CFLAGS) -c $< -o $@
 
+# ===============================
+# Utility Targets
+# ===============================
+
 clean:
-	rm -f $(TARGET).ihx $(TARGET).lk $(TARGET).lst $(TARGET).map $(TARGET).rel $(TARGET).rst $(TARGET).sym $(SRC_DIR)/*.rel
+	rm -rf $(BUILD_DIR)
 
 flash: $(TARGET).ihx
 	$(STFLASH) --format ihex write $(TARGET).ihx
 
-lint:
-	cppcheck --enable=all $(SRC_DIR)/ $(INC_DIR)/
-
-.PHONY: all clean flash lint
+.PHONY: all clean flash
