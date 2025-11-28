@@ -44,4 +44,26 @@ void UART1_ReadString(char *buffer, uint8_t maxLen);
 uint8_t UART1_Read(void);
 uint8_t UART1_Available(void);
 
+//interrup driven RX support
+extern volatile uint8_t uart1_rx_byte;
+extern volatile uint8_t uart1_rx_flag;
+
+#define UART_DIV(f_cpu, baud) ((f_cpu) / (baud))
+
+//CR2 Bits
+#define UART1_CR2_REN (1 << 2)  //RX Enable
+#define UART1_CR2_TEN (1 << 3)  //TX Enable
+#define UART1_CR2_RIEN (1 << 5) //Receiver Interrupt Enable
+
+//SR Bits 
+#define UART1_SR_RXNE (1 << 5) 
+#define UART1_SR_TXE  (1 << 7) 
+
+// //exported globals
+// volatile uint8_t uart1_rx_byte = 0;
+// volatile uint8_t uart1_rx_flag = 0;
+
+// ISR prototype 
+void UART1_RX_IRQHandler(void) __interrupt(18);
+
 #endif

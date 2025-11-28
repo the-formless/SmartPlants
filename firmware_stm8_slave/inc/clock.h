@@ -18,4 +18,6 @@
 
 void clock_init(void);
 
+void uart_clock_init(void);
+
 #endif

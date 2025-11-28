@@ -14,10 +14,17 @@
 
 #include "uart.h"
 #include "gpio.h"
+#include "clock.h"
 
-#define UART_DIV(f_cpu, baud) ((f_cpu) / (baud))
+
+volatile uint8_t uart1_rx_byte = 0;
+volatile uint8_t uart1_rx_flag = 0;
 
 void UART1_Init(UART_InitTypeDef *cfg) {
+
+    //Enable UART1 PLCLK 
+    uart_clock_init();
+
     uint32_t div = UART_DIV(16000000UL, cfg->baudrate);
 
     //-----
@@ -69,21 +76,28 @@ void UART1_Init(UART_InitTypeDef *cfg) {
     //-----
     //Enable UART
     //-----
-    UART1->CR2 |= (1<<2);//enable RX
-    UART1->CR2 |= (1<<3);//enable TX
-    UART1->CR2 |= (1<<5);//enable UART 
+    // UART1->CR2 |= (1<<2);//enable RX
+    // UART1->CR2 |= (1<<3);//enable TX
+    // UART1->CR2 |= (1<<5);//enable UART 
+    //Enable interrupt UART
+    UART1->CR2 |= UART1_CR2_REN | UART1_CR2_TEN | UART1_CR2_RIEN;
+
+    //Clear pending Junk
+    (void)UART1->SR;
+    (void)UART1->DR;
+
 }
 
 void UART1_Write(uint8_t data)
 {
-    while(!(UART1->SR & (1<<7))); //TXE
+    while(!(UART1->SR & UART1_SR_TXE)); //wait TXE 
     UART1->DR = data;
 }
 
 void UART1_WriteString(const char *str)
 {
     while(*str) {
-        UART1_Write(*str++);
+        UART1_Write((uint8_t)*str++);
     }
 }
 
