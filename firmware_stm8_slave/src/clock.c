@@ -9,6 +9,11 @@ void clock_init(void) {
 }
 
 void uart_clock_init(void) {
-    //Enable UART1 clock
-    CLK_PCKENR1 |= (1 << 3); //UART1 clock enable
+    //Enable UART1
+    CLK_PCKENR1 |= (1 << 3); 
+}
+
+void i2c_clock_init(void) {
+    //Enable I2C clock
+    CLK_PCKENR1 |= (1 << 0);
 }

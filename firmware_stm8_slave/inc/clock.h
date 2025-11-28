@@ -19,5 +19,6 @@
 void clock_init(void);
 
 void uart_clock_init(void);
+void i2c_clock_init(void);
 
 #endif

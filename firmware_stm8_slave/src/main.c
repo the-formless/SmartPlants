@@ -3,6 +3,8 @@
 #include "tim4.h"
 #include "uart.h"
 #include "tim2.h"
+#include "i2c.h"
+#include "lcd.h"
 
 static inline void enableInterrupts(void)
 {
@@ -31,7 +33,6 @@ void main(void){
         .parity = UART_PARITY_NONE,
         .stopBits = UART_STOPBITS_1
     };
-
     UART1_Init(&uart_cfg);
 
     TIM2_Init(1000); //send 1 byte every 1000us if available(1ms)  1000bytes/sec pacing
@@ -40,7 +41,11 @@ void main(void){
 
     UART1_WriteString("STM8 UART Gated TX Ready\r\n");
 
+    I2C_Init(100000);
 
+    LCD_Init();
+
+    LCD_WriteString("Hello STM8!");
 
 
     /**
@@ -56,5 +61,10 @@ void main(void){
             UART1_WriteAsync(c); //non blocking echo back
             GPIO_TogglePin(PD2); //toggle LED on RX
         }
+
+        tim4_delay(500);
+        GPIO_TogglePin(PD2);
+        tim4_delay(500);
+        GPIO_TogglePin(PD2);
      }
 }
