@@ -19,12 +19,14 @@ TARGET = $(BUILD_DIR)/main
 SRCS = $(SRC_DIR)/main.c \
        $(SRC_DIR)/gpio.c \
        $(SRC_DIR)/clock.c \
-       $(SRC_DIR)/tim4.c
+       $(SRC_DIR)/tim4.c \
+	   $(SRC_DIR)/uart.c
 
 # Header files
 HEADERS = $(INC_DIR)/gpio.h \
           $(INC_DIR)/clock.h \
-          $(INC_DIR)/tim4.h
+          $(INC_DIR)/tim4.h \
+		  $(INC_DIR)/uart.h
 		  
 # Object files → Builds/*.rel
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.rel)
