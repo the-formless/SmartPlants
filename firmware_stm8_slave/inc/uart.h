@@ -83,5 +83,7 @@ extern volatile uint8_t uart1_tx_tail;
 void UART1_WriteAsync(uint8_t b);
 void UART1_WriteStringAsync(const char *s);
 
+uint8_t UART1_ReadByteNonBlocking(uint8_t *b);
+
 
 #endif

@@ -23,14 +23,16 @@ SRCS = $(SRC_DIR)/main.c \
 	   $(SRC_DIR)/uart.c \
 	   $(SRC_DIR)/uart_isr.c \
 	   $(SRC_DIR)/tim2.c \
-	   $(SRC_DIR)/tim2_isr.c
+	   $(SRC_DIR)/tim2_isr.c \
+	   $(SRC_DIR)/ws2812.c
 
 # Header files
 HEADERS = $(INC_DIR)/gpio.h \
           $(INC_DIR)/clock.h \
           $(INC_DIR)/tim4.h \
 		  $(INC_DIR)/uart.h \
-		  $(INC_DIR)/tim2.h
+		  $(INC_DIR)/tim2.h \
+		  $(INC_DIR)/ws2812.h
 		  
 # Object files → Builds/*.rel
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.rel)

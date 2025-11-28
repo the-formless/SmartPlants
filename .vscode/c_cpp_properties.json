@@ -5,13 +5,13 @@
             "includePath": [
                 "${workspaceFolder}/**"
             ],
+            "defines": [
+                "__interrupt(...)="
+            ],
             "compilerPath": "/usr/bin/gcc",
             "cStandard": "c17",
             "cppStandard": "gnu++17",
-            "intelliSenseMode": "linux-gcc-x64",
-            "defines": [
-                "__interrupt(...)="
-            ]
+            "intelliSenseMode": "linux-gcc-x64"
         }
     ],
     "version": 4

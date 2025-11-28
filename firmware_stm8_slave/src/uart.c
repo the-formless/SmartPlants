@@ -157,3 +157,14 @@ void UART1_WriteStringAsync(const char *s) {
         UART1_WriteAsync((uint8_t)*s++);
     }
 }
+
+uint8_t UART1_ReadByteNonBlocking(uint8_t *b) {
+    if(uart1_rx_head == uart1_rx_tail) {
+        return 0; //no data
+    }
+
+    *b = uart1_rx_buffer[uart1_rx_tail];
+    uart1_rx_tail = (uart1_rx_tail +1) % UART1_RX_BUFFER_SIZE;
+
+    return 1; //data read
+}
