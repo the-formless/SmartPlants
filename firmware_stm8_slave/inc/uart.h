@@ -40,6 +40,7 @@ typedef struct {
 void UART1_Init(UART_InitTypeDef *config);
 void UART1_Write(uint8_t data);
 void UART1_WriteString(const char *str);
+void UART1_ReadString(char *buffer, uint8_t maxLen);
 uint8_t UART1_Read(void);
 uint8_t UART1_Available(void);
 

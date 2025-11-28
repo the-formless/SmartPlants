@@ -87,6 +87,28 @@ void UART1_WriteString(const char *str)
     }
 }
 
+void UART1_ReadString(char *buffer, uint8_t maxLen) {
+    uint8_t idx = 0;
+    
+    while(1) {
+        //wait for next character
+        while(!UART1_Available());
+
+        uint8_t c = UART1_Read();
+
+        //Stop if terminator found 
+        if( c == '\n' || c == '\r') {
+            break;
+        }
+
+        //store character
+        if(idx < maxLen - 1) { //leave space for null terminator
+            buffer[idx++] = c;
+        }
+    }
+    buffer[idx] = '\0'; //null terminate
+}
+
 uint8_t UART1_Read(void)
 {
     while(!(UART1->SR & (1<<5))); //RXNE

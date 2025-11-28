@@ -56,8 +56,12 @@ void main(void){
      while(1) {
 
         if(UART1_Available()) {
-            uint8_t c = UART1_Read();
-            UART1_WriteString(c + "-echo"); //echo back
+            // uint8_t c = UART1_Read();
+            // UART1_WriteString(c + "-echo"); //echo back
+            char buf[32];
+            UART1_ReadString(buf, sizeof(buf));
+            UART1_WriteString("Received: ");
+            UART1_WriteString(buf);
         }
 
         //Toggle all LEDs
