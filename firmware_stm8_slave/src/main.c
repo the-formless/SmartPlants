@@ -3,6 +3,7 @@
 #include "tim4.h"
 #include "uart.h"
 #include "tim2.h"
+#include "protocol.h"
 
 static inline void enableInterrupts(void)
 {
@@ -14,7 +15,7 @@ void main(void){
     clock_init();
     //Initialize Timer4 for delays
     // enabling tim4 produces a flickering(led) out on TIM2 pins PA3 and PC5
-    tim4_init();
+    // tim4_init();
 
     GPIO_InitTypeDef led_config = {
         .mode = GPIO_MODE_OUTPUT,
@@ -33,6 +34,7 @@ void main(void){
     };
 
     UART1_Init(&uart_cfg);
+    UART1_WriteString("Init uart complete\r\n");
 
     TIM2_Init(1000); //send 1 byte every 1000us if available(1ms)  1000bytes/sec pacing
 
@@ -48,13 +50,26 @@ void main(void){
         & creates a pointer (from a normal variable)
         * uses a pointer (access the thing the pointer points to)
      */
+    Packet current_pkt;
 
      while(1) {
 
-        if(UART1_Available()) {
-            uint8_t c = UART1_Read();
-            UART1_WriteAsync(c); //non blocking echo back
-            GPIO_TogglePin(PD2); //toggle LED on RX
+        // if(UART1_Available()) {
+        //     uint8_t c = UART1_Read();
+        //     UART1_WriteAsync(c); //non blocking echo back
+        //     GPIO_TogglePin(PD2); //toggle LED on RX
+        // }
+
+        if(parse_packets(&current_pkt)) {
+            UART1_WriteString("Packet Received\r\n");
+            UART1_WriteString("ADDR: ");
+            UART1_Write(current_pkt.addr);
+            UART1_WriteString("\r\nOPCODE: ");
+            UART1_Write(current_pkt.opcode);
+            UART1_WriteString("\r\nLEN: ");
+            UART1_Write(current_pkt.len);  
+            // handle_packet(&current_pkt);
         }
+
      }
 }
