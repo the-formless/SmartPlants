@@ -2,6 +2,7 @@
 #include "clock.h"
 #include "tim4.h"
 #include "uart.h"
+#include "tim2.h"
 
 static inline void enableInterrupts(void)
 {
@@ -33,9 +34,11 @@ void main(void){
 
     UART1_Init(&uart_cfg);
 
+    TIM2_Init(1000); //send 1 byte every 1000us if available(1ms)  1000bytes/sec pacing
+
     enableInterrupts();
 
-    UART1_WriteString("STM8 UART Ready\r\n");
+    UART1_WriteString("STM8 UART Gated TX Ready\r\n");
 
 
 
