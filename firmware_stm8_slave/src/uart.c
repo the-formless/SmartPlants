@@ -125,11 +125,17 @@ void UART1_ReadString(char *buffer, uint8_t maxLen) {
 
 uint8_t UART1_Read(void)
 {
-    while(!(UART1->SR & (1<<5))); //RXNE
-    return UART1->DR;
+    while (uart1_rx_head == uart1_rx_tail) {
+        // wait or return 0. We can check this if something fails
+    }
+
+    uint8_t data = uart1_rx_buffer[uart1_rx_tail];
+    uart1_rx_tail = (uart1_rx_tail +1) % UART1_RX_BUFFER_SIZE;
+
+    return data;
 }
 
 uint8_t UART1_Available(void)
 {
-    return (UART1->SR & (1<<5)) != 0; 
+    return (uart1_rx_head != uart1_rx_tail); 
 }

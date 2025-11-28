@@ -48,61 +48,10 @@ void main(void){
 
      while(1) {
 
-        // if(UART1_Available()) {
-        //     // uint8_t c = UART1_Read();
-        //     // UART1_WriteString(c + "-echo"); //echo back
-        //     char buf[32];
-        //     UART1_ReadString(buf, sizeof(buf));
-        //     UART1_WriteString("Received: ");
-        //     UART1_WriteString(buf);
-        // }
-
-        if (uart1_rx_flag) {
-            uint8_t c = uart1_rx_byte;
-            uart1_rx_flag = 0;
-
-            // Echo back to Arduino
-            UART1_Write(c);
-
-            // Toggle PD2 LED
-            GPIO_TogglePin(PD2);
+        if(UART1_Available()) {
+            uint8_t c = UART1_Read();
+            UART1_Write(c); //echo back
+            GPIO_TogglePin(PD2); //toggle LED on RX
         }
-
-        // //Toggle all LEDs
-        // // GPIO_WritePin(PD2, 1);
-        // GPIO_WritePin(PA1, 1);
-        // GPIO_WritePin(PA2, 1);
-        // GPIO_WritePin(PA3, 1);
-        // GPIO_WritePin(PB4, 1);
-        // GPIO_WritePin(PB5, 1);
-        // GPIO_WritePin(PC3, 1);
-        // GPIO_WritePin(PC4, 1);
-        // GPIO_WritePin(PC5, 1);
-        // GPIO_WritePin(PC6, 1);
-        // GPIO_WritePin(PC7, 1);
-        // GPIO_WritePin(PD3, 1);
-        // GPIO_WritePin(PD4, 1);
-        // // GPIO_WritePin(PD5, 1);
-        // // GPIO_WritePin(PD6, 1);
-
-        // tim4_delay(500);
-
-        // // GPIO_WritePin(PD2, 0);
-        // GPIO_WritePin(PA1, 0);
-        // GPIO_WritePin(PA2, 0);
-        // GPIO_WritePin(PA3, 0);
-        // GPIO_WritePin(PB4, 0);
-        // GPIO_WritePin(PB5, 0);
-        // GPIO_WritePin(PC3, 0);
-        // GPIO_WritePin(PC4, 0);
-        // GPIO_WritePin(PC5, 0);
-        // GPIO_WritePin(PC6, 0);
-        // GPIO_WritePin(PC7, 0);
-        // GPIO_WritePin(PD3, 0);
-        // GPIO_WritePin(PD4, 0);
-        // // GPIO_WritePin(PD5, 0);
-        // // GPIO_WritePin(PD6, 0);
-
-        // tim4_delay(500);
      }
 }

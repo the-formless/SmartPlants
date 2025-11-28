@@ -59,11 +59,16 @@ extern volatile uint8_t uart1_rx_flag;
 #define UART1_SR_RXNE (1 << 5) 
 #define UART1_SR_TXE  (1 << 7) 
 
-// //exported globals
-// volatile uint8_t uart1_rx_byte = 0;
-// volatile uint8_t uart1_rx_flag = 0;
+#define UART1_RX_BUFFER_SIZE 64
 
 // ISR prototype 
 void UART1_RX_IRQHandler(void) __interrupt(18);
+
+
+//ring buffer state
+extern volatile uint8_t uart1_rx_buffer[UART1_RX_BUFFER_SIZE];
+extern volatile uint8_t uart1_rx_head;
+extern volatile uint8_t uart1_rx_tail;
+
 
 #endif
