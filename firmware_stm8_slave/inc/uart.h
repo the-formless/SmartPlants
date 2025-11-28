@@ -54,6 +54,7 @@ extern volatile uint8_t uart1_rx_flag;
 #define UART1_CR2_REN (1 << 2)  //RX Enable
 #define UART1_CR2_TEN (1 << 3)  //TX Enable
 #define UART1_CR2_RIEN (1 << 5) //Receiver Interrupt Enable
+#define UART1_CR2_TIEN (1 << 7) //Transmitter Interrupt Enable
 
 //SR Bits 
 #define UART1_SR_RXNE (1 << 5) 
@@ -63,12 +64,24 @@ extern volatile uint8_t uart1_rx_flag;
 
 // ISR prototype 
 void UART1_RX_IRQHandler(void) __interrupt(18);
+void UART1_TX_IRQHandler(void) __interrupt(17);
+
 
 
 //ring buffer state
 extern volatile uint8_t uart1_rx_buffer[UART1_RX_BUFFER_SIZE];
 extern volatile uint8_t uart1_rx_head;
 extern volatile uint8_t uart1_rx_tail;
+
+#define UART1_TX_BUFFER_SIZE 64
+
+//tx ring buffer state 
+extern volatile uint8_t uart1_tx_buffer[UART1_TX_BUFFER_SIZE];
+extern volatile uint8_t uart1_tx_head;
+extern volatile uint8_t uart1_tx_tail;
+
+void UART1_WriteAsync(uint8_t b);
+void UART1_WriteStringAsync(const char *s);
 
 
 #endif

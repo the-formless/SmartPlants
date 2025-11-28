@@ -50,7 +50,7 @@ void main(void){
 
         if(UART1_Available()) {
             uint8_t c = UART1_Read();
-            UART1_Write(c); //echo back
+            UART1_WriteAsync(c); //non blocking echo back
             GPIO_TogglePin(PD2); //toggle LED on RX
         }
      }

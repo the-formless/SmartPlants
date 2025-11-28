@@ -80,7 +80,7 @@ void UART1_Init(UART_InitTypeDef *cfg) {
     // UART1->CR2 |= (1<<3);//enable TX
     // UART1->CR2 |= (1<<5);//enable UART 
     //Enable interrupt UART
-    UART1->CR2 |= UART1_CR2_REN | UART1_CR2_TEN | UART1_CR2_RIEN;
+    UART1->CR2 |= UART1_CR2_REN | UART1_CR2_TEN | UART1_CR2_RIEN | UART1_CR2_TIEN; //UART Enable + RX/TX Enable + RX Interrupt Enable + TIEN
 
     //Clear pending Junk
     (void)UART1->SR;
@@ -138,4 +138,23 @@ uint8_t UART1_Read(void)
 uint8_t UART1_Available(void)
 {
     return (uart1_rx_head != uart1_rx_tail); 
+}
+
+void UART1_WriteAsync(uint8_t b) {
+    uint8_t next = (uart1_tx_head + 1) % UART1_TX_BUFFER_SIZE;
+
+    //wait for space in buffer
+    while(next == uart1_tx_tail);
+
+    uart1_tx_buffer[uart1_tx_head] = b;
+    uart1_tx_head = next;
+
+    //enable TXE interrupt
+    UART1->CR2 |= UART1_CR2_TIEN;
+}
+
+void UART1_WriteStringAsync(const char *s) {
+    while(*s) {
+        UART1_WriteAsync((uint8_t)*s++);
+    }
 }
