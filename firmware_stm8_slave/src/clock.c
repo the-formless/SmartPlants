@@ -14,6 +14,15 @@ void uart_clock_init(void) {
 }
 
 void i2c_clock_init(void) {
-    //Enable I2C clock
+    // Check if already enabled
+    uint8_t before = CLK_PCKENR1;
+    
+    // Enable I2C clock (bit 0)
     CLK_PCKENR1 |= (1 << 0);
+    
+    // Verify it stuck
+    uint8_t after = CLK_PCKENR1;
+    
+    // Small delay for clock to stabilize
+    for(volatile uint16_t i = 0; i < 1000; i++);
 }

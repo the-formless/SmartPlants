@@ -35,6 +35,13 @@ typedef struct {
 #define I2C_SR1_BTF (1<<2)
 #define I2C_SR1_TXE (1<<7)
 
+// I2C Status Register 3 (SR3)
+#define I2C_SR3_MSL   (1 << 0)  // 0x01 - Master/Slave
+#define I2C_SR3_BUSY  (1 << 1)  // 0x02 - Bus busy
+#define I2C_SR3_TRA   (1 << 2)  // 0x04 - Transmitter/Receiver
+#define I2C_SR3_GENCALL (1 << 4) // 0x10 - General call header
+#define I2C_SR3_DUALF (1 << 7)  // 0x80 - Dual flag
+
 //API 
 void I2C_Init(void);
 uint8_t I2C_Start(void);

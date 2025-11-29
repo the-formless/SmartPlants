@@ -58,10 +58,8 @@ void GPIO_InitPin(GPIO_Pin pin , GPIO_InitTypeDef * config) {
     //----
     //Speed: Slow/Fast
     //----
-    if(config->mode == GPIO_MODE_OUTPUT && config->speed == GPIO_SPEED_FAST) {
+    if(config->speed == GPIO_SPEED_FAST) {
         port->CR2 |= pin_mask; //Fast
-    } else {
-        port->CR2 &= ~pin_mask; //Slow
     }
 }
 

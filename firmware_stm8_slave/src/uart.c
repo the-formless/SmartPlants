@@ -157,3 +157,14 @@ void UART1_WriteStringAsync(const char *s) {
         UART1_WriteAsync((uint8_t)*s++);
     }
 }
+
+void UART1_WriteHex(uint8_t value)
+{
+    const char hex_table[] = "0123456789ABCDEF";
+
+    uint8_t high = (value >> 4) & 0x0F;
+    uint8_t low  = value & 0x0F;
+
+    UART1_Write(hex_table[high]);
+    UART1_Write(hex_table[low]);
+}

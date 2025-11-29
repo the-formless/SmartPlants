@@ -34,9 +34,8 @@ void main(void){
     };
     UART1_Init(&uart_cfg);
 
-    TIM2_Init(1000); //send 1 byte every 1000us if available(1ms)  1000bytes/sec pacing
+    // TIM2_Init(1000); //send 1 byte every 1000us if available(1ms)  1000bytes/sec pacing
 
-    enableInterrupts();
 
     UART1_WriteString("STM8 UART Gated TX Ready\r\n");
     
@@ -44,8 +43,34 @@ void main(void){
 
     // CLK_PCKENR2 &= ~(1 << 0);   // Disable TIM1 clock
 
+    UART1_WriteString("DDR=");
+    UART1_WriteHex(GPIOB->DDR);
+    UART1_WriteString(" CR1=");
+    UART1_WriteHex(GPIOB->CR1);
+    UART1_WriteString(" CR2=");
+    UART1_WriteHex(GPIOB->CR2);
+    UART1_WriteString("\r\n");
+
+    
+    UART1_WriteString("CR2=");
+    UART1_WriteHex(GPIOB->CR2);
+    UART1_WriteString("\r\n");
+
+    UART1_WriteString("PB4=");
+    UART1_Write( (GPIOB->IDR & (1<<4)) ? '1' : '0' );
+
+    UART1_WriteString(" PB5=");
+    UART1_Write( (GPIOB->IDR & (1<<5)) ? '1' : '0' );
+    UART1_WriteString("\r\n");
+
+
     I2C_Init();
 
+    UART1_WriteString("IDR PB4=");
+    UART1_Write((GPIOB->IDR & (1<<4)) ? '1' : '0');
+    UART1_WriteString("IDR PB5=");
+    UART1_Write((GPIOB->IDR & (1<<5)) ? '1' : '0');
+    UART1_WriteString("\r\n");
     I2C_Start();
     I2C_Stop();
     UART1_WriteString("STM8 I2C Ready\r\n");
@@ -63,17 +88,22 @@ void main(void){
         * uses a pointer (access the thing the pointer points to)
      */
 
+    enableInterrupts();
      while(1) {
 
         if(UART1_Available()) {
             uint8_t c = UART1_Read();
-            UART1_WriteAsync(c); //non blocking echo back
+            UART1_WriteString(c); //blocking echo back
             // GPIO_TogglePin(PD2); //toggle LED on RX
         }
 
-        tim4_delay(500);
+        tim4_delay(3000);
         GPIO_TogglePin(PD2);
-        tim4_delay(500);
+        // GPIO_WritePin(PB4, 1);
+        // GPIO_WritePin(PB5, 1);
+        tim4_delay(3000);
+        // GPIO_WritePin(PB4, 0);
+        // GPIO_WritePin(PB5, 0);
         GPIO_TogglePin(PD2);
      }
 }
