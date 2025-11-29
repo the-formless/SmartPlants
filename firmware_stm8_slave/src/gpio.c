@@ -1,4 +1,5 @@
 #include "gpio.h"
+#include "tim4.h"
 
 void GPIO_InitPin(GPIO_Pin pin , GPIO_InitTypeDef * config) {
     
@@ -99,6 +100,57 @@ void GPIO_WritePort(volatile GPIO_Port *port, uint8_t value) {
 uint8_t GPIO_ReadPort(volatile GPIO_Port *port) {
     return port->IDR;
 }
+
+void GPIO_SetPinMode(GPIO_Pin pin, GPIO_Mode mode)
+{
+    uint8_t mask = GPIO_PIN(pin.pin);
+
+    if (mode == GPIO_MODE_OUTPUT)
+        pin.port->DDR |= mask;
+    else
+        pin.port->DDR &= ~mask;
+}
+
+void GPIO_SetPinAF(GPIO_Pin pin)
+{
+    uint8_t mask = GPIO_PIN(pin.pin);
+    pin.port->CR2 |= mask;
+}
+
+void GPIO_I2C_ReleaseBus(GPIO_Pin scl, GPIO_Pin sda)
+{
+    uint8_t scl_mask = GPIO_PIN(scl.pin);
+    uint8_t sda_mask = GPIO_PIN(sda.pin);
+
+    // 1. Drive both HIGH
+    scl.port->ODR |= scl_mask;
+    sda.port->ODR |= sda_mask;
+
+    // Use as outputs temporarily
+    scl.port->DDR |= scl_mask;
+    sda.port->DDR |= sda_mask;
+
+    tim4_delay(1);
+
+    // 2. Toggle SCL 8 times
+    for(uint8_t i = 0; i < 8; i++) {
+        scl.port->ODR &= ~scl_mask;   // LOW
+        tim4_delay(1);
+        scl.port->ODR |= scl_mask;    // HIGH
+        tim4_delay(1);
+    }
+
+    // 3. Generate a STOP
+    sda.port->ODR &= ~sda_mask;
+    tim4_delay(1);
+    sda.port->ODR |= sda_mask;
+    tim4_delay(1);
+
+    // 4. Return control to I2C peripheral → set INPUT
+    scl.port->DDR &= ~scl_mask;
+    sda.port->DDR &= ~sda_mask;
+}
+
 
 /** Notes & Correct Behavior
 

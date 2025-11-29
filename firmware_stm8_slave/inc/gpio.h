@@ -102,5 +102,9 @@ void GPIO_TogglePin(volatile GPIO_Pin pin);
 
 void GPIO_WritePort(volatile GPIO_Port * port, uint8_t value);
 uint8_t GPIO_ReadPort(volatile GPIO_Port * port);   
+void GPIO_SetPinMode(GPIO_Pin pin, GPIO_Mode mode);
+void GPIO_SetPinAF(GPIO_Pin pin);
+void GPIO_I2C_ReleaseBus(GPIO_Pin scl, GPIO_Pin sda);
+
 
 #endif

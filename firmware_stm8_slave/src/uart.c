@@ -16,7 +16,6 @@
 #include "gpio.h"
 #include "clock.h"
 
-
 volatile uint8_t uart1_rx_byte = 0;
 volatile uint8_t uart1_rx_flag = 0;
 
@@ -167,4 +166,16 @@ void UART1_WriteHex(uint8_t value)
 
     UART1_Write(hex_table[high]);
     UART1_Write(hex_table[low]);
+}
+
+void UART1_WriteHex8(uint8_t value)
+{
+    const char hex[] = "0123456789ABCDEF";
+
+    char out[3];
+    out[0] = hex[(value >> 4) & 0x0F];
+    out[1] = hex[value & 0x0F];
+    out[2] = '\0';
+
+    UART1_WriteString(out);
 }

@@ -35,6 +35,12 @@ typedef struct {
 #define I2C_SR1_BTF (1<<2)
 #define I2C_SR1_TXE (1<<7)
 
+#define I2C_SR2_BERR   (1 << 0)   // Bus error
+#define I2C_SR2_ARLO   (1 << 1)   // Arbitration lost
+#define I2C_SR2_AF     (1 << 2)   // Acknowledge failure (NACK)
+#define I2C_SR2_OVR    (1 << 3)   // Overrun/Underrun
+
+
 // I2C Status Register 3 (SR3)
 #define I2C_SR3_MSL   (1 << 0)  // 0x01 - Master/Slave
 #define I2C_SR3_BUSY  (1 << 1)  // 0x02 - Bus busy
@@ -43,10 +49,11 @@ typedef struct {
 #define I2C_SR3_DUALF (1 << 7)  // 0x80 - Dual flag
 
 //API 
-void I2C_Init(void);
-uint8_t I2C_Start(void);
+void I2C_Init(uint32_t freq);
+void I2C_Start(void);
 uint8_t I2C_SendAddress(uint8_t addr);
-uint8_t I2C_WriteByte(uint8_t b);
+void I2C_Write(uint8_t b);
 void I2C_Stop(void);
-
+void I2C_Scan(void);
+uint8_t I2C_Probe(uint8_t addr);
 #endif
