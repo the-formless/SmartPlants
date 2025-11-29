@@ -9,4 +9,6 @@ void LCD_WriteChar(char c);
 void LCD_WriteString(const char *s);
 void LCD_SetCursor(uint8_t row, uint8_t col);
 
+static void lcd_data(uint8_t data);
+
 #endif

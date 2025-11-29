@@ -6,7 +6,6 @@
 
 void I2C_Init(uint32_t freq)
 {
-    UART1_WriteString("I2C init START\r\n");
 
     i2c_clock_init();
 
@@ -35,7 +34,6 @@ void I2C_Init(uint32_t freq)
 
     I2C->CR1 = I2C_CR1_PE;
 
-    UART1_WriteString("I2C_init DONE!\r\n");
 }
 
 void I2C_Start(void)
@@ -52,13 +50,6 @@ void I2C_Stop(void)
 void I2C_Write(uint8_t data)
 {
     I2C->DR = data;
-    UART1_WriteString("  SR3: ");
-    UART1_WriteHex8(I2C->SR3);
-    UART1_WriteString("\r\n");
-
-    UART1_WriteString("  SR2: ");
-    UART1_WriteHex8(I2C->SR2);
-    UART1_WriteString("\r\n");
 
     uint32_t timeout = 50000;
     while (timeout--)
@@ -68,13 +59,11 @@ void I2C_Write(uint8_t data)
 
         if (I2C->SR2 & I2C_SR2_AF)
         {
-            UART1_WriteString(" !!! DATA NACK (AF) !!!\r\n");
             I2C->SR2 &= ~I2C_SR2_AF; // clear AF
             return;
         }
     }
 
-    UART1_WriteString(" !!! TXE TIMEOUT !!!\r\n");
 }
 
 
@@ -118,7 +107,6 @@ uint8_t I2C_Probe(uint8_t addr)
 
 void I2C_Scan(void)
 {
-    UART1_WriteString("Scanning...\r\n");
 
     for (uint8_t a = 1; a < 127; a++)
     {

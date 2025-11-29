@@ -8,26 +8,30 @@
 
 static inline void enableInterrupts(void)
 {
-    __asm__("rim"); //set I bit
+    __asm__("rim"); // set I bit
 }
 
-void main(void){
-    //Initialize System Clock
+static inline void disableInterrupts(void)
+{
+    __asm__("sim");   // Set Interrupt Mask (disable all IRQs)
+}
+
+void main(void)
+{
+    // 1) Core init
     clock_init();
-    //Initialize Timer4 for delays
-    // enabling tim4 produces a flickering(led) out on TIM2 pins PA3 and PC5
     tim4_init();
 
+    // 2) LED for RX debug
     GPIO_InitTypeDef led_config = {
         .mode = GPIO_MODE_OUTPUT,
         .pull = GPIO_NOPULL,
         .outputType = GPIO_OUTPUT_PUSHPULL,
         .speed = GPIO_SPEED_SLOW
     };
+    GPIO_InitPin(PD2, &led_config); // LED on PD2
 
-    //initialize Pins
-    GPIO_InitPin(PD2, &led_config); //LED Pin
-
+    // 3) UART init
     UART_InitTypeDef uart_cfg = {
         .baudrate = 9600,
         .parity = UART_PARITY_NONE,
@@ -35,87 +39,52 @@ void main(void){
     };
     UART1_Init(&uart_cfg);
 
-    TIM2_Init(1000); //send 1 byte every 1000us if available(1ms)  1000bytes/sec pacing
+    // TIM2 still used for gated TX
+    TIM2_Init(1000);
 
+    UART1_WriteString("STM8 UART + LCD Ready\r\n");
 
-    UART1_WriteString("STM8 UART Gated TX Ready\r\n");
-
+    // 4) I2C + LCD init
     I2C_Init(100000);
-
-    UART1_WriteString("SR3=");
-    UART1_WriteHex8(I2C->SR3);
-    UART1_WriteString("\r\n");
-
-
-    UART1_WriteString("Testing START...\r\n");
-
-    I2C_Start();
-
-    UART1_WriteString("START OK\r\n");
-
-    UART1_WriteString("Testing LCD ACK...\r\n");
-
-    I2C_Stop();
-    tim4_delay(1);
-    UART1_WriteString("SR3=");
-    UART1_WriteHex8(I2C->SR3);
-    UART1_WriteString("\r\n");
-
-    I2C_Start();
-    UART1_WriteString("START OK\r\n");
-
-    // send address WRITE (0x27 << 1 = 0x4E)
-    I2C->DR = (0x27 << 1);
-
-    tim4_delay(1);
-
-    // Check NACK
-    if (I2C->SR2 & I2C_SR2_AF) {
-        UART1_WriteString("LCD NACKed!\r\n");
-        I2C->SR2 &= ~I2C_SR2_AF; // clear AF
-    } else {
-        UART1_WriteString("LCD ACKed!\r\n");
-    }
-
-    // Clear everything
-    I2C_Stop();
-    tim4_delay(1);
-    
-    
     LCD_Init();
-    // LCD_Clear();
-    
-    // I2C_Scan();
-    // LCD_SetCursor(0, 0);
-    // LCD_WriteString("Hello!");
+    LCD_Clear();
+    LCD_SetCursor(0, 0);
+    LCD_WriteString("Ready...?....");
 
-    // LCD_SetCursor(1, 0);
-    // LCD_WriteString("STM8 OK");
-
-    LCD_WriteString("Hello STM8!");
-    LCD_WriteString("NIRAKAAR");
-    /**
-      Side NOTES:
-        & creates a pointer (from a normal variable)
-        * uses a pointer (access the thing the pointer points to)
-     */
-
+    // 5) Enable global interrupts (for UART RX)
     enableInterrupts();
-     while(1) {
 
-        if(UART1_Available()) {
-            uint8_t c = UART1_Read();
-            UART1_WriteString(&c); //blocking echo back
-            // GPIO_TogglePin(PD2); //toggle LED on RX
+    // --- UART → LCD live display state ---
+    uint8_t lcd_col = 0;
+    char uart_line[17];  // one LCD line (16 chars + null)
+    uint8_t uart_index = 0;
+    uint8_t c;
+
+    while (1)
+    {
+        if (UART1_Available())
+        {
+            
+            // disableInterrupts();
+            
+            c = UART1_Read();
+
+            // Debug: echo back to PC and toggle LED so we SEE activity
+            GPIO_TogglePin(PD2);
+            UART1_Write(c);
+
+            if (c == '\r' || c == '\n') {
+                uart_line[uart_index] = '\0';
+                UART1_DISABLE_RX_INT();
+                LCD_Clear();
+                LCD_SetCursor(0, 0);
+                LCD_WriteString(uart_line);
+                UART1_ENABLE_RX_INT();
+                uart_index = 0;
+            } else if (uart_index < 16) {
+                uart_line[uart_index++] = c;
+            }
+            // enableInterrupts();
         }
-
-        tim4_delay(3000);
-        GPIO_TogglePin(PD2);
-        // GPIO_WritePin(PB4, 1);
-        // GPIO_WritePin(PB5, 1);
-        tim4_delay(3000);
-        // GPIO_WritePin(PB4, 0);
-        // GPIO_WritePin(PB5, 0);
-        GPIO_TogglePin(PD2);
-     }
+    }
 }
