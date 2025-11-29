@@ -24,8 +24,7 @@ SRCS = $(SRC_DIR)/main.c \
 	   $(SRC_DIR)/uart_isr.c \
 	   $(SRC_DIR)/tim2.c \
 	   $(SRC_DIR)/tim2_isr.c \
-	   $(SRC_DIR)/i2c.c \
-	   $(SRC_DIR)/lcd.c
+	   $(SRC_DIR)/i2c.c 
 
 # Header files
 HEADERS = $(INC_DIR)/gpio.h \
@@ -33,8 +32,7 @@ HEADERS = $(INC_DIR)/gpio.h \
           $(INC_DIR)/tim4.h \
 		  $(INC_DIR)/uart.h \
 		  $(INC_DIR)/tim2.h \
-		  $(INC_DIR)/i2c.h \
-		  $(INC_DIR)/lcd.h 
+		  $(INC_DIR)/i2c.h 
 		  
 # Object files → Builds/*.rel
 OBJS = $(SRCS:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.rel)

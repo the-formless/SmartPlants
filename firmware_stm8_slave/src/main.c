@@ -4,7 +4,6 @@
 #include "uart.h"
 #include "tim2.h"
 #include "i2c.h"
-#include "lcd.h"
 
 static inline void enableInterrupts(void)
 {
@@ -40,12 +39,22 @@ void main(void){
     enableInterrupts();
 
     UART1_WriteString("STM8 UART Gated TX Ready\r\n");
+    
+    // CLK_SWIMCCR |= 0x01;   // Disable SWIM function on PB5
 
-    I2C_Init(100000);
+    // CLK_PCKENR2 &= ~(1 << 0);   // Disable TIM1 clock
 
-    LCD_Init();
+    I2C_Init();
 
-    LCD_WriteString("Hello STM8!");
+    I2C_Start();
+    I2C_Stop();
+    UART1_WriteString("STM8 I2C Ready\r\n");
+
+    // LCD_Init();
+
+    UART1_WriteString("LCD Ready\r\n");
+
+    // LCD_WriteString("Hello STM8!");
 
 
     /**
@@ -59,7 +68,7 @@ void main(void){
         if(UART1_Available()) {
             uint8_t c = UART1_Read();
             UART1_WriteAsync(c); //non blocking echo back
-            GPIO_TogglePin(PD2); //toggle LED on RX
+            // GPIO_TogglePin(PD2); //toggle LED on RX
         }
 
         tim4_delay(500);
