@@ -43,81 +43,12 @@ void main(void)
     };
     UART1_Init(&uart_cfg);
 
-
-    UART1_WriteString("STM8 UART + LCD Ready\r\n");
-
-    UART1_WriteString("SDA before init = \r\n");
-    UART1_WriteHex8(GPIO_ReadPin(PB5));
-    UART1_WriteString("\r\n");
-
-    UART1_WriteString("SCL before init = \r\n");
-    UART1_WriteHex8(GPIO_ReadPin(PB4));
-    UART1_WriteString("\r\n");
-    UART1_WriteString("I2c init complete\r\n");
-    // LCD_Init();
-    // LCD_RequestPrintLine0("Ready...?....");
-    UART1_WriteString("SDA after init = \r\n");
-    UART1_WriteHex8(GPIO_ReadPin(PB5));
-    UART1_WriteString("\r\n");
-
-    UART1_WriteString("SCL after init = \r\n");
-    UART1_WriteHex8(GPIO_ReadPin(PB4));
-    UART1_WriteString("\r\n");
-
-    // 5) Enable global interrupts (for UART RX)
     enableInterrupts();
-
-   uint32_t last_toggle = 0;
-    uint8_t pattern = 0;
-    uint8_t buf[1];
-
-    UART1_WriteString("Starting main loop\r\n");
-    UART1_WriteString("MILLIS = \r\n");
-    UART1_WriteHex8((uint8_t)millis());
-
-    if (I2C_BeginWrite(0x27, buf, 1)) {
-        UART1_WriteString("BeginWrite OK\r\n");
-    } else {
-        UART1_WriteString("BeginWrite BUSY\r\n");
-    }
-
-    I2C_State_t last_state, i2c_state;
 
     while (1)
     {
-        i2c_state = I2C_GetState();
-        if (last_state != i2c_state) {
-            UART1_WriteString("STATE=");
-            UART1_WriteHex8(i2c_state);
-            UART1_WriteString(" SR1=");
-            UART1_WriteHex8(I2C->SR1);
-            UART1_WriteString(" SR2=");
-            UART1_WriteHex8(I2C->SR2);
-            UART1_WriteString("\r\n");
-
-            last_state = i2c_state;
-        }
-        uint32_t now = millis();
-
-        // drive I2C state machine
-        I2C_Task();
-
-        // every 500 ms, schedule a new I2C write if bus is free
-        if ((int32_t)(now - last_toggle) >= 0) {
-            if (!I2C_IsBusy()) {
-                pattern ^= 0x08;    // toggle bit 3 (backlight on PCF8574)
-                buf[0] = pattern;
-
-                if (I2C_BeginWrite(0x27, buf, 1)) {
-                    UART1_WriteString("I2C tx start: 0x\r\n");
-                    UART1_WriteHex(buf[0]);
-                    UART1_WriteString("\r\n");
-                    GPIO_TogglePin(PD2);
-                    last_toggle = now + 500;  // next toggle in 500 ms
-                } else {
-                    UART1_WriteString("I2C busy, cannot start\r\n");
-                }
-            }
+        if(UART1_Available()) {
+            
         }
     }
 }
