@@ -44,11 +44,11 @@ void main(void)
 
     UART1_WriteString("STM8 UART + LCD Ready\r\n");
 
-    UART1_WriteString("SDA before init = ");
+    UART1_WriteString("SDA before init = \r\n");
     UART1_WriteHex8(GPIO_ReadPin(PB5));
     UART1_WriteString("\r\n");
 
-    UART1_WriteString("SCL before init = ");
+    UART1_WriteString("SCL before init = \r\n");
     UART1_WriteHex8(GPIO_ReadPin(PB4));
     UART1_WriteString("\r\n");
     // // 4) I2C + LCD init
@@ -56,11 +56,11 @@ void main(void)
     UART1_WriteString("I2c init complete\r\n");
     // LCD_Init();
     // LCD_RequestPrintLine0("Ready...?....");
-    UART1_WriteString("SDA after init = ");
+    UART1_WriteString("SDA after init = \r\n");
     UART1_WriteHex8(GPIO_ReadPin(PB5));
     UART1_WriteString("\r\n");
 
-    UART1_WriteString("SCL after init = ");
+    UART1_WriteString("SCL after init = \r\n");
     UART1_WriteHex8(GPIO_ReadPin(PB4));
     UART1_WriteString("\r\n");
 
@@ -95,7 +95,7 @@ void main(void)
                 buf[0] = pattern;
 
                 if (I2C_BeginWrite(0x27, buf, 1)) {
-                    UART1_WriteString("I2C tx start: 0x");
+                    UART1_WriteString("I2C tx start: 0x\r\n");
                     UART1_WriteHex(buf[0]);
                     UART1_WriteString("\r\n");
                     GPIO_TogglePin(PD2);

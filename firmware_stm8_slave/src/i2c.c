@@ -30,7 +30,9 @@ static uint32_t i2c_deadline = 0;
 
 void I2C_Start(void)
 {
+    UART1_WriteString("start function\r\n");
     I2C->CR2 |= I2C_CR2_START;
+    UART1_WriteString("start function exit\r\n");
 }
 
 void I2C_Init(uint32_t freq)
@@ -110,7 +112,7 @@ void I2C_Task(void) {
 
     switch (i2c_state){
         case I2C_STATE_IDLE:
-        // UART1_WriteString("idle state");
+        UART1_WriteString("idle state\r\n");
             //nothing to do
             break;
 
@@ -170,7 +172,7 @@ void I2C_Task(void) {
             break;
 
         case I2C_STATE_WAIT_TXE:
-        UART1_WriteString("wait txe state");
+        UART1_WriteString("wait txe state\r\n");
             if (I2C->SR1 & I2C_SR1_TXE) {
                 if (i2c_tx_pos < i2c_tx_len) {
                     i2c_state = I2C_STATE_SEND_BYTE;
