@@ -10,6 +10,22 @@
 #define LCD_EN 0x04
 #define LCD_BL 0x08
 
+typedef enum {
+    LCD_STATE_IDLE = 0,
+    LCD_STATE_CLEAR_CMD,
+    LCD_STATE_CLEAR_WAIT,
+    LCD_STATE_SET_LINE0,
+    LCD_STATE_WRITE_CHARS,
+    LCD_STATE_WRITE_CHARS_WAIT,
+    LCD_STATE_DONE
+} LCD_State_t;
+
+static volatile LCD_State_t lcd_state = LCD_STATE_IDLE;
+static char lcd_buf[17];
+static uint8_t lcd_len = 0;
+static uint8_t lcd_pos = 0;
+static uint32_t lcd_next_time = 0;
+
 // ------------------------------------------
 // LOW LEVEL 4-BIT TRANSFER
 // ------------------------------------------
@@ -48,7 +64,6 @@ static void lcd_write4(uint8_t nib)
     // ---- STOP ----
     I2C->CR2 |= I2C_CR2_STOP;
 
-    tim4_delay(1);
 }
 
 
@@ -112,7 +127,6 @@ void LCD_WriteString(const char *s)
 void LCD_Clear(void)
 {
     lcd_cmd(0x01);
-    tim4_delay(2);
 }
 
 void LCD_SetCursor(uint8_t row, uint8_t col)
@@ -121,3 +135,77 @@ void LCD_SetCursor(uint8_t row, uint8_t col)
     lcd_cmd(0x80 | addr);
 }
 
+void LCD_RequestPrintLine0(const char *text) 
+{
+    uint8_t i = 0;
+
+    //copy upto 16 chars, pad with spaces
+    while(i < 16 && text[i] != '\0') {
+        lcd_buf[i] = text[i];
+        i++;
+    }
+    while(i<16) {
+        lcd_buf[i++] = ' ';
+    }
+    lcd_buf[16] = '\0';
+
+    lcd_len = 16;
+    lcd_pos = 0;
+
+    //Start new transactioon
+    lcd_state = LCD_STATE_CLEAR_CMD;
+}
+
+uint8_t LCD_IsBusy(void)
+{
+    return (lcd_state != LCD_STATE_IDLE);
+}
+
+void LCD_Task(void)
+{
+    uint32_t now = millis();
+
+    switch(lcd_state)
+    {
+        case LCD_STATE_IDLE:
+        //nothing to do
+        break;
+
+        case LCD_STATE_CLEAR_CMD:
+            //clear display
+            lcd_cmd(0x01);
+            //clear/home need > 1.53 ms; we'll wait 2ms
+            lcd_next_time = now + 2;
+            lcd_state = LCD_STATE_CLEAR_WAIT;
+            break;
+
+        case LCD_STATE_CLEAR_WAIT:
+            if((int32_t)(now - lcd_next_time) >= 0) {
+                //set ddram address to start of the line 0
+                lcd_cmd(0x00);
+                lcd_pos = 0;
+                lcd_state = LCD_STATE_WRITE_CHARS;
+            }
+            break;
+        
+        case LCD_STATE_WRITE_CHARS:
+            if(lcd_pos < lcd_len) {
+                lcd_data(lcd_buf[lcd_pos++]);
+                lcd_next_time = now + 1;
+                lcd_state = LCD_STATE_WRITE_CHARS_WAIT;
+            } else {
+                lcd_state = LCD_STATE_DONE;
+            }
+            break;
+        
+        case LCD_STATE_WRITE_CHARS_WAIT:
+            if((uint32_t)(now - lcd_next_time) >= 0) {
+                lcd_state = LCD_STATE_WRITE_CHARS;
+            }
+            break;
+        
+        case LCD_STATE_DONE:
+            lcd_state = LCD_STATE_IDLE;
+            break;
+    }
+}

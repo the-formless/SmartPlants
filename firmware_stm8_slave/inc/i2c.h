@@ -56,4 +56,26 @@ void I2C_Write(uint8_t b);
 void I2C_Stop(void);
 void I2C_Scan(void);
 uint8_t I2C_Probe(uint8_t addr);
+
+typedef enum {
+    I2C_ERR_NONE = 0,
+    I2C_ERR_BUSY,
+    I2C_ERR_NACK,
+    I2C_ERR_TIMEOUT,
+    I2C_ERR_UNKNOWN
+} I2C_Error_t;
+
+// Start a non-blocking write transaction.
+// addr: 7-bit address
+// data: pointer to buffer
+// len:  number of bytes
+// Returns 1 if started, 0 if bus already busy.
+uint8_t I2C_BeginWrite(uint8_t addr, const uint8_t *data, uint8_t len);
+
+//main state loop
+void I2C_Task(void);
+
+uint8_t I2c_IsBusy(void);
+I2C_Error_t I2c_GetLastError(void);
+
 #endif
