@@ -1,10 +1,11 @@
+#warning "COMPILING NEW I2C FSM"
+
 #include "i2c.h"
 #include "clock.h"
 #include "gpio.h"
 #include "uart.h"   // only for debug prints 
 #include "tim4.h"
 
-#define I2C_TIMEOUT_MS 10
 
 typedef enum {
     I2C_STATE_IDLE = 0,
@@ -28,6 +29,13 @@ static uint8_t i2c_tx_pos = 0;
 static I2C_Error_t i2c_last_error = I2C_ERR_NONE;
 static uint32_t i2c_deadline = 0;
 
+
+void I2C_Start(void)
+{
+    UART1_WriteString("Now setting the register CR2");
+    I2C->CR2 |= I2C_CR2_START;
+    UART1_WriteString("CR2 register set for start");
+}
 
 void I2C_Init(uint32_t freq)
 {
@@ -94,91 +102,12 @@ static uint8_t i2c_timed_out(void) {
 }
 
 
-void I2C_Start(void)
-{
-    I2C->CR2 |= I2C_CR2_START;
-    // while(!(I2C->SR1 & I2C_SR1_SB));  // Wait START
-    UART1_WriteString("CR2 register set for start");
-}
 
 void I2C_Stop(void)
 {
     I2C->CR2 |= I2C_CR2_STOP;
 }
 
-void I2C_Write(uint8_t data)
-{
-    I2C->DR = data;
-    
-    uint32_t timeout = 50000;
-    while (timeout--)
-    {
-        if (I2C->SR1 & I2C_SR1_TXE)
-        return;
-        
-        if (I2C->SR2 & I2C_SR2_AF)
-        {
-            I2C->SR2 &= ~I2C_SR2_AF; // clear AF
-            return;
-        }
-    }
-    
-}
-
-
-uint8_t I2C_Probe(uint8_t addr)
-{
-    // Generate START
-    I2C->CR2 |= I2C_CR2_START;
-    while (!(I2C->SR1 & I2C_SR1_SB));
-    
-    // Send address
-    I2C->DR = (addr << 1); // write mode
-    
-    // Wait for either ADDR or AF (NACK)
-    uint32_t timeout = 50000;
-    while (timeout--)
-    {
-        // NACK?
-        if (I2C->SR2 & I2C_SR2_AF)
-        {
-            I2C->SR2 &= ~I2C_SR2_AF;   // clear
-            I2C->CR2 |= I2C_CR2_STOP;  // stop
-            return 0;                  // not found
-        }
-        
-        // ACK?
-        if (I2C->SR1 & I2C_SR1_ADDR)
-        {
-            volatile uint8_t dummy;
-            dummy = I2C->SR1; // clear ADDR by reading both
-            dummy = I2C->SR3;
-            
-            I2C->CR2 |= I2C_CR2_STOP;
-            return 1; // found!
-        }
-    }
-    
-    // TIMEOUT → treat as NACK
-    I2C->CR2 |= I2C_CR2_STOP;
-    return 0;
-}
-
-void I2C_Scan(void)
-{
-    
-    for (uint8_t a = 1; a < 127; a++)
-    {
-        if (I2C_Probe(a))
-        {
-            UART1_WriteString("FOUND: 0x");
-            UART1_WriteHex(a);
-            UART1_WriteString("\r\n");
-        }
-    }
-    
-    UART1_WriteString("Scan done.\r\n");
-}
 
 void I2C_Task(void) {
     UART1_WriteString("STATE = ");
@@ -192,6 +121,7 @@ void I2C_Task(void) {
             break;
 
         case I2C_STATE_START:
+            UART1_WriteString("ENTER REAL START STATE\r\n");
             //Generate Start
             I2C_Start();
             i2c_deadline = millis() + I2C_TIMEOUT_MS;

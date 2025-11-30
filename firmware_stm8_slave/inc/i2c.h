@@ -48,14 +48,13 @@ typedef struct {
 #define I2C_SR3_GENCALL (1 << 4) // 0x10 - General call header
 #define I2C_SR3_DUALF (1 << 7)  // 0x80 - Dual flag
 
+
+#define I2C_TIMEOUT_MS 10
+
 //API 
 void I2C_Init(uint32_t freq);
 void I2C_Start(void);
-uint8_t I2C_SendAddress(uint8_t addr);
-void I2C_Write(uint8_t b);
 void I2C_Stop(void);
-void I2C_Scan(void);
-uint8_t I2C_Probe(uint8_t addr);
 
 typedef enum {
     I2C_ERR_NONE = 0,

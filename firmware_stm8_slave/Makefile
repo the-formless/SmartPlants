@@ -25,7 +25,8 @@ SRCS = $(SRC_DIR)/main.c \
 	   $(SRC_DIR)/uart_isr.c \
 	   $(SRC_DIR)/tim2.c \
 	   $(SRC_DIR)/tim2_isr.c \
-	   $(SRC_DIR)/i2c.c 
+	   $(SRC_DIR)/i2c.c \
+	   $(SRC_DIR)/lcd.c
 
 # Header files
 HEADERS = $(INC_DIR)/gpio.h \

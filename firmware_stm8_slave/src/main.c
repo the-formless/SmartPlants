@@ -44,11 +44,25 @@ void main(void)
 
     UART1_WriteString("STM8 UART + LCD Ready\r\n");
 
+    UART1_WriteString("SDA before init = ");
+    UART1_WriteHex8(GPIO_ReadPin(PB5));
+    UART1_WriteString("\r\n");
+
+    UART1_WriteString("SCL before init = ");
+    UART1_WriteHex8(GPIO_ReadPin(PB4));
+    UART1_WriteString("\r\n");
     // // 4) I2C + LCD init
     I2C_Init(100000);
     UART1_WriteString("I2c init complete\r\n");
     // LCD_Init();
     // LCD_RequestPrintLine0("Ready...?....");
+    UART1_WriteString("SDA after init = ");
+    UART1_WriteHex8(GPIO_ReadPin(PB5));
+    UART1_WriteString("\r\n");
+
+    UART1_WriteString("SCL after init = ");
+    UART1_WriteHex8(GPIO_ReadPin(PB4));
+    UART1_WriteString("\r\n");
 
     // 5) Enable global interrupts (for UART RX)
     enableInterrupts();

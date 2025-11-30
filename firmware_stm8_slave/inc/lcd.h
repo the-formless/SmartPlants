@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 //uncomment this section after i2c state machine implementation
-// void LCD_Init(void);
+void LCD_Init(void);
 // void LCD_Clear(void);
 // void LCD_WriteChar(char c);
 // void LCD_WriteString(const char *s);
@@ -22,7 +22,7 @@
 
 //delete this after i2c state machine immplementation
 
-static inline void LCD_Init(void);
+// static inline void LCD_Init(void);
 static inline void LCD_Clear(void);
 static inline void LCD_WriteChar(char c);
 static inline void LCD_WriteString(const char *s);
