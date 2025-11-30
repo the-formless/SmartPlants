@@ -49,7 +49,7 @@ typedef struct {
 #define I2C_SR3_DUALF (1 << 7)  // 0x80 - Dual flag
 
 
-#define I2C_TIMEOUT_MS 10
+#define I2C_TIMEOUT_MS 500
 
 //API 
 void I2C_Init(uint32_t freq);

@@ -4,7 +4,7 @@
 #include "uart.h"
 #include "tim2.h"
 #include "i2c.h"
-#include "lcd.h"
+// #include "lcd.h"
 
 static inline void enableInterrupts(void)
 {
