@@ -51,6 +51,19 @@ typedef struct {
 
 #define I2C_TIMEOUT_MS 500
 
+typedef enum {
+    I2C_STATE_IDLE = 0,
+    I2C_STATE_START,
+    I2C_STATE_WAIT_SB,
+    I2C_STATE_SEND_ADDR,
+    I2C_STATE_WAIT_ADDR,
+    I2C_STATE_SEND_BYTE,
+    I2C_STATE_WAIT_TXE,
+    I2C_STATE_STOP,
+    I2C_STATE_DONE,
+    I2C_STATE_ERROR
+} I2C_State_t;
+
 //API 
 void I2C_Init(uint32_t freq);
 void I2C_Start(void);
@@ -76,5 +89,8 @@ void I2C_Task(void);
 
 uint8_t I2c_IsBusy(void);
 I2C_Error_t I2c_GetLastError(void);
+
+I2C_State_t I2C_GetState(void);
+
 
 #endif

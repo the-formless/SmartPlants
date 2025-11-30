@@ -21,6 +21,10 @@ void main(void)
     // 1) Core init
     clock_init();
     tim4_init();
+    // // 4) I2C + LCD init
+    I2C_Init(100000);
+    // TIM2 still used for gated TX
+    TIM2_Init(1000);
 
     // 2) LED for RX debug
     GPIO_InitTypeDef led_config = {
@@ -39,8 +43,6 @@ void main(void)
     };
     UART1_Init(&uart_cfg);
 
-    // TIM2 still used for gated TX
-    TIM2_Init(1000);
 
     UART1_WriteString("STM8 UART + LCD Ready\r\n");
 
@@ -51,8 +53,6 @@ void main(void)
     UART1_WriteString("SCL before init = \r\n");
     UART1_WriteHex8(GPIO_ReadPin(PB4));
     UART1_WriteString("\r\n");
-    // // 4) I2C + LCD init
-    I2C_Init(100000);
     UART1_WriteString("I2c init complete\r\n");
     // LCD_Init();
     // LCD_RequestPrintLine0("Ready...?....");
@@ -81,8 +81,22 @@ void main(void)
         UART1_WriteString("BeginWrite BUSY\r\n");
     }
 
+    I2C_State_t last_state, i2c_state;
+
     while (1)
     {
+        i2c_state = I2C_GetState();
+        if (last_state != i2c_state) {
+            UART1_WriteString("STATE=");
+            UART1_WriteHex8(i2c_state);
+            UART1_WriteString(" SR1=");
+            UART1_WriteHex8(I2C->SR1);
+            UART1_WriteString(" SR2=");
+            UART1_WriteHex8(I2C->SR2);
+            UART1_WriteString("\r\n");
+
+            last_state = i2c_state;
+        }
         uint32_t now = millis();
 
         // drive I2C state machine
