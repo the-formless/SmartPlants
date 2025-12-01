@@ -48,26 +48,41 @@ typedef struct {
 #define I2C_SR3_GENCALL (1 << 4) // 0x10 - General call header
 #define I2C_SR3_DUALF (1 << 7)  // 0x80 - Dual flag
 
+// Interrupt enable bits (STM8 I2C->ITR)
+#define I2C_ITR_ITERREN  (1 << 0)
+#define I2C_ITR_ITEVTEN  (1 << 1)
+#define I2C_ITR_ITBUFEN  (1 << 2)
+
 
 #define I2C_TIMEOUT_MS 500
 
 typedef enum {
     I2C_STATE_IDLE = 0,
     I2C_STATE_START,
-    I2C_STATE_WAIT_SB,
-    I2C_STATE_SEND_ADDR,
-    I2C_STATE_WAIT_ADDR,
-    I2C_STATE_SEND_BYTE,
-    I2C_STATE_WAIT_TXE,
+    I2C_STATE_ADDR,
+    I2C_STATE_TX,
     I2C_STATE_STOP,
-    I2C_STATE_DONE,
     I2C_STATE_ERROR
-} I2C_State_t;
+} I2C_State;
+
+typedef struct {
+    uint8_t address;
+    const uint8_t *data;
+    uint8_t length;
+    uint8_t index;
+} I2C_Transaction;
+
+extern volatile I2C_State i2c_state;
+extern volatile I2C_Transaction i2c_txn;
+extern volatile uint32_t i2c_last_activity_ms;
+extern volatile uint8_t i2c_txn_active;
+
+
 
 //API 
 void I2C_Init(uint32_t freq);
-void I2C_Start(void);
-void I2C_Stop(void);
+// void I2C_Start(void);
+// void I2C_Stop(void);
 
 typedef enum {
     I2C_ERR_NONE = 0,
@@ -90,7 +105,10 @@ void I2C_Task(void);
 uint8_t I2c_IsBusy(void);
 I2C_Error_t I2c_GetLastError(void);
 
-I2C_State_t I2C_GetState(void);
+I2C_State I2C_GetState(void);
+
+//force abort
+void I2C_Abort(void);
 
 
 #endif

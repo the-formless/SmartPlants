@@ -4,7 +4,7 @@
 #include "uart.h"
 #include "tim2.h"
 #include "i2c.h"
-// #include "lcd.h"
+#include "lcd.h"
 
 static inline void enableInterrupts(void)
 {
@@ -21,10 +21,9 @@ void main(void)
     // 1) Core init
     clock_init();
     tim4_init();
-    // // 4) I2C + LCD init
-    I2C_Init(100000);
-    // TIM2 still used for gated TX
-    TIM2_Init(1000);
+
+
+    
 
     // 2) LED for RX debug
     GPIO_InitTypeDef led_config = {
@@ -41,14 +40,54 @@ void main(void)
         .parity = UART_PARITY_NONE,
         .stopBits = UART_STOPBITS_1
     };
-    UART1_Init(&uart_cfg);
+    // UART1_Init(&uart_cfg);
+
+    // // 4) I2C + LCD init
+    I2C_Init(100000);
+    // UART1_WriteStringAsync("I2C initialized\r\n");
+
+
+    // TIM2 still used for gated TX
+    // TIM2_Init(1000);
+
+    volatile uint32_t toggleTime = millis();
+
+    // UART → LCD line buffer
+    char uart_line[17];
+    uint8_t uart_index = 0;
+    uint8_t c;
 
     enableInterrupts();
+    LCD_InitBegin();   // start init FSM
 
     while (1)
     {
-        if(UART1_Available()) {
-            
+
+        if(LCD_InitDone()) {
+            LCD_Task();        // runs runtime FSM
+        } else {
+            LCD_InitTask();    // runs init FSM
+        }
+
+        // if(UART1_Available()) {
+        //     c = UART1_Read();
+        //     UART1_WriteAsync(c); // echo back
+        //     if (c == '\r' || c == '\n') {
+        //         uart_line[uart_index] = '\0';
+
+        //         // Ask LCD to update line (non-blocking)
+        //         // LCD_RequestPrintLine0(uart_line);
+
+        //         uart_index = 0;
+        //     }
+        //     else if (uart_index < 16) {
+        //         uart_line[uart_index++] = c;
+        //     }
+        // }
+
+        if(millis() - toggleTime > 500){
+            GPIO_TogglePin(PD2);
+            toggleTime = millis();
         }
     }
 }

@@ -1,138 +1,55 @@
 #include "lcd.h"
 #include "i2c.h"
 #include "tim4.h"
-#include "uart.h"
+#include <string.h>
 
-#define LCD_ADDR 0x27
 
-#define LCD_RS 0x01
-#define LCD_RW 0x02
-#define LCD_EN 0x04
-#define LCD_BL 0x08
-
-typedef enum {
-    LCD_STATE_IDLE = 0,
-    LCD_STATE_CLEAR_CMD,
-    LCD_STATE_CLEAR_WAIT,
-    LCD_STATE_SET_LINE0,
-    LCD_STATE_WRITE_CHARS,
-    LCD_STATE_WRITE_CHARS_WAIT,
-    LCD_STATE_DONE
-} LCD_State_t;
-
-static volatile LCD_State_t lcd_state = LCD_STATE_IDLE;
-static char lcd_buf[17];
+static volatile LCD_State lcd_state = LCD_STATE_IDLE;
+static char lcd_line_buf[17];
 static uint8_t lcd_len = 0;
 static uint8_t lcd_pos = 0;
 static uint32_t lcd_next_time = 0;
 
-// ------------------------------------------
-// LOW LEVEL 4-BIT TRANSFER
-// ------------------------------------------
-static void lcd_write4(uint8_t nib)
+static uint8_t lcd_cmd_buf[8];
+static uint8_t lcd_data_buf[8];
+
+static volatile LCD_InitState lcd_init_state = LCD_INIT_IDLE;
+static uint32_t lcd_init_next_time = 0;
+
+// Build the I2C bytes for a single LCD command (PCF8574 4-bit mode)
+static uint8_t build_cmd_bytes(uint8_t cmd, uint8_t *out)
 {
-    uint8_t d = nib | LCD_BL; // Backlight ON
-    volatile uint8_t dummy;
+    uint8_t high = (cmd & 0xF0);           // high nibble
+    uint8_t low  = (cmd << 4) & 0xF0;      // low nibble
+    uint8_t i = 0;
 
-    // ---- START ----
-    I2C->CR2 |= I2C_CR2_START;
-    while (!(I2C->SR1 & I2C_SR1_SB));
+    // High nibble + EN pulse
+    out[i++] = high | LCD_BL | LCD_EN;     // EN = 1
+    out[i++] = high | LCD_BL;              // EN = 0
 
-    // ---- SEND ADDRESS ----
-    I2C->DR = (LCD_ADDR << 1); // Write mode
-    while (!(I2C->SR1 & I2C_SR1_ADDR)) {
-        if (I2C->SR2 & I2C_SR2_AF) {
-            I2C->SR2 &= ~I2C_SR2_AF;
-            I2C->CR2 |= I2C_CR2_STOP;
-            return;
-        }
-    }
+    // Low nibble + EN pulse
+    out[i++] = low | LCD_BL | LCD_EN;      // EN = 1
+    out[i++] = low | LCD_BL;               // EN = 0
 
-    // MUST CLEAR ADDR FLAG
-    dummy = I2C->SR1;
-    dummy = I2C->SR3;
-    (void)dummy;
-
-    // ---- BYTE: EN = 1 ----
-    I2C->DR = d | LCD_EN;
-    while (!(I2C->SR1 & I2C_SR1_TXE));
-
-    // ---- BYTE: EN = 0 ----
-    I2C->DR = d & ~LCD_EN;
-    while (!(I2C->SR1 & I2C_SR1_TXE));
-
-    // ---- STOP ----
-    I2C->CR2 |= I2C_CR2_STOP;
-
+    return i;  // always 4 bytes
 }
-
-
-
+// Build PCF8574 bytes for a DATA byte
 // ------------------------------------------
-// COMMAND
-// ------------------------------------------
-static void lcd_cmd(uint8_t cmd)
+static uint8_t build_data_bytes(uint8_t data, uint8_t *out)
 {
+    uint8_t high = (data & 0xF0);          // high nibble
+    uint8_t low  = (data << 4) & 0xF0;     // low nibble
+    uint8_t i = 0;
 
-    lcd_write4(cmd & 0xF0);
-    lcd_write4((cmd << 4) & 0xF0);
-}
+    // High nibble + EN pulse (RS = 1)
+    out[i++] = high | LCD_BL | LCD_RS | LCD_EN;
+    out[i++] = high | LCD_BL | LCD_RS;
 
-// ------------------------------------------
-// DATA
-// ------------------------------------------
-static void lcd_data(uint8_t data)
-{
-    lcd_write4((data & 0xF0) | LCD_RS);
-    lcd_write4(((data << 4) & 0xF0) | LCD_RS);
-}
+    // Low nibble + EN pulse (RS = 1)
+    out[i++] = low | LCD_BL | LCD_RS | LCD_EN;
+    out[i++] = low | LCD_BL | LCD_RS;
 
-// ------------------------------------------
-// INIT
-// ------------------------------------------
-void LCD_Init(void)
-{
-    tim4_delay(50);
-
-    lcd_write4(0x30);
-    tim4_delay(5);
-
-    lcd_write4(0x30);
-    tim4_delay(1);
-
-    lcd_write4(0x30);
-    tim4_delay(1);
-
-    lcd_write4(0x20);
-    tim4_delay(1);
-
-    lcd_cmd(0x28);
-
-    lcd_cmd(0x0C);
-
-    lcd_cmd(0x06);
-
-    lcd_cmd(0x01);
-    tim4_delay(2);
-}
-
-
-void LCD_WriteString(const char *s)
-{
-
-    while (*s)
-        lcd_data(*s++);
-}
-
-void LCD_Clear(void)
-{
-    lcd_cmd(0x01);
-}
-
-void LCD_SetCursor(uint8_t row, uint8_t col)
-{
-    uint8_t addr = (row == 0 ? 0x00 : 0x40) + col;
-    lcd_cmd(0x80 | addr);
+    return i;
 }
 
 void LCD_RequestPrintLine0(const char *text) 
@@ -141,71 +58,226 @@ void LCD_RequestPrintLine0(const char *text)
 
     //copy upto 16 chars, pad with spaces
     while(i < 16 && text[i] != '\0') {
-        lcd_buf[i] = text[i];
+        lcd_line_buf[i] = text[i];
         i++;
     }
     while(i<16) {
-        lcd_buf[i++] = ' ';
+        lcd_line_buf[i++] = ' ';
     }
-    lcd_buf[16] = '\0';
+    lcd_line_buf[16] = '\0';
 
     lcd_len = 16;
     lcd_pos = 0;
 
     //Start new transactioon
-    lcd_state = LCD_STATE_CLEAR_CMD;
+    lcd_state = LCD_STATE_CLEAR;
 }
+
 
 uint8_t LCD_IsBusy(void)
 {
     return (lcd_state != LCD_STATE_IDLE);
 }
 
+
 void LCD_Task(void)
 {
+    if(!LCD_InitDone())
+        return;
+
     uint32_t now = millis();
 
-    switch(lcd_state)
+    switch (lcd_state)
     {
         case LCD_STATE_IDLE:
-        //nothing to do
-        break;
+            // nothing
+            break;
 
-        case LCD_STATE_CLEAR_CMD:
-            //clear display
-            lcd_cmd(0x01);
-            //clear/home need > 1.53 ms; we'll wait 2ms
-            lcd_next_time = now + 2;
-            lcd_state = LCD_STATE_CLEAR_WAIT;
+        case LCD_STATE_CLEAR:
+            if (I2C_IsIdle()) {
+                uint8_t len = build_cmd_bytes(0x01, lcd_cmd_buf);  // clear display
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    // Wait >1.52ms for clear/home
+                    lcd_next_time = now + 2;
+                    lcd_state = LCD_STATE_CLEAR_WAIT;
+                }
+            }
             break;
 
         case LCD_STATE_CLEAR_WAIT:
-            if((int32_t)(now - lcd_next_time) >= 0) {
-                //set ddram address to start of the line 0
-                lcd_cmd(0x00);
-                lcd_pos = 0;
-                lcd_state = LCD_STATE_WRITE_CHARS;
+            if ((int32_t)(now - lcd_next_time) >= 0) {
+                lcd_state = LCD_STATE_SET_DDRAM;
             }
             break;
-        
-        case LCD_STATE_WRITE_CHARS:
-            if(lcd_pos < lcd_len) {
-                lcd_data(lcd_buf[lcd_pos++]);
-                lcd_next_time = now + 1;
-                lcd_state = LCD_STATE_WRITE_CHARS_WAIT;
+
+        case LCD_STATE_SET_DDRAM:
+            if (I2C_IsIdle()) {
+                // DDRAM address line 0, col 0 = 0x80
+                uint8_t len = build_cmd_bytes(0x80, lcd_cmd_buf);
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    lcd_pos = 0;
+                    lcd_state = LCD_STATE_WRITE_BYTES;
+                }
+            }
+            break;
+
+        case LCD_STATE_WRITE_BYTES:
+            if (I2C_IsIdle()) {
+                if (lcd_pos < lcd_len) {
+                    uint8_t len = build_data_bytes(lcd_line_buf[lcd_pos++], lcd_data_buf);
+                    if (I2C_BeginWrite(LCD_ADDR, lcd_data_buf, len) == 0) {
+                        // Space out characters by ~1ms (overkill, but safe)
+                        lcd_next_time = now + 1;
+                    }
+                } else {
+                    lcd_state = LCD_STATE_DONE;
+                }
             } else {
-                lcd_state = LCD_STATE_DONE;
+                // still sending last char
+            }
+
+            // enforce inter-char delay
+            if ((int32_t)(now - lcd_next_time) < 0) {
+                // not yet time for next character, stay here
             }
             break;
-        
-        case LCD_STATE_WRITE_CHARS_WAIT:
-            if((uint32_t)(now - lcd_next_time) >= 0) {
-                lcd_state = LCD_STATE_WRITE_CHARS;
-            }
-            break;
-        
+
         case LCD_STATE_DONE:
             lcd_state = LCD_STATE_IDLE;
+            break;
+    }
+}
+
+void LCD_InitBegin(void)
+{
+    lcd_init_state = LCD_INIT_DELAY_50MS;
+    lcd_init_next_time = millis() + 50;
+}
+
+uint8_t LCD_InitDone(void) 
+{
+    return (lcd_init_state == LCD_INIT_DONE);
+}
+
+
+void LCD_InitTask(void)
+{
+    uint32_t now = millis();
+
+    switch (lcd_init_state)
+    {
+        case LCD_INIT_IDLE:
+            break;
+
+        case LCD_INIT_DELAY_50MS:
+            if ((int32_t)(lcd_init_next_time - now) >= 0) {
+                lcd_init_state = LCD_INIT_CMD_30_1;
+            }
+            break;
+
+        case LCD_INIT_CMD_30_1:
+            if (I2C_IsIdle()) {
+                uint8_t len = build_cmd_bytes(0x30, lcd_cmd_buf);
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    lcd_init_next_time = now + 5;
+                    lcd_init_state = LCD_INIT_WAIT_5MS;
+                }
+            }
+            break;
+
+        case LCD_INIT_WAIT_5MS:
+            if ((int32_t)(lcd_init_next_time - now) >= 0)
+                lcd_init_state = LCD_INIT_CMD_30_2;
+            break;
+
+        case LCD_INIT_CMD_30_2:
+            if (I2C_IsIdle()) {
+                uint8_t len = build_cmd_bytes(0x30, lcd_cmd_buf);
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    lcd_init_next_time = now + 1;
+                    lcd_init_state = LCD_INIT_WAIT_1MS_A;
+                }
+            }
+            break;
+
+        case LCD_INIT_WAIT_1MS_A:
+            if ((int32_t)(lcd_init_next_time - now) >= 0)
+                lcd_init_state = LCD_INIT_CMD_30_3;
+            break;
+
+        case LCD_INIT_CMD_30_3:
+            if (I2C_IsIdle()) {
+                uint8_t len = build_cmd_bytes(0x30, lcd_cmd_buf);
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    lcd_init_next_time = now + 1;
+                    lcd_init_state = LCD_INIT_WAIT_1MS_B;
+                }
+            }
+            break;
+
+        case LCD_INIT_WAIT_1MS_B:
+            if ((int32_t)(lcd_init_next_time - now) >= 0)
+                lcd_init_state = LCD_INIT_CMD_20;
+            break;
+
+        case LCD_INIT_CMD_20:
+            if (I2C_IsIdle()) {
+                uint8_t len = build_cmd_bytes(0x20, lcd_cmd_buf);
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    lcd_init_next_time = now + 1;
+                    lcd_init_state = LCD_INIT_WAIT_1MS_C;
+                }
+            }
+            break;
+
+        case LCD_INIT_WAIT_1MS_C:
+            if ((int32_t)(lcd_init_next_time - now) >= 0)
+                lcd_init_state = LCD_INIT_FUNCSET;
+            break;
+
+        case LCD_INIT_FUNCSET:
+            if (I2C_IsIdle()) {
+                uint8_t len = build_cmd_bytes(0x28, lcd_cmd_buf); // 4-bit, 2 lines
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    lcd_init_state = LCD_INIT_DISPLAYON;
+                }
+            }
+            break;
+
+        case LCD_INIT_DISPLAYON:
+            if (I2C_IsIdle()) {
+                uint8_t len = build_cmd_bytes(0x0C, lcd_cmd_buf); // display on, cursor off
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    lcd_init_state = LCD_INIT_ENTRYMODE;
+                }
+            }
+            break;
+
+        case LCD_INIT_ENTRYMODE:
+            if (I2C_IsIdle()) {
+                uint8_t len = build_cmd_bytes(0x06, lcd_cmd_buf); // entry mode inc, no shift
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    lcd_init_state = LCD_INIT_CLEAR;
+                }
+            }
+            break;
+
+        case LCD_INIT_CLEAR:
+            if (I2C_IsIdle()) {
+                uint8_t len = build_cmd_bytes(0x01, lcd_cmd_buf); // clear
+                if (I2C_BeginWrite(LCD_ADDR, lcd_cmd_buf, len) == 0) {
+                    lcd_init_next_time = now + 2;  // >1.52ms
+                    lcd_init_state = LCD_INIT_FINAL_WAIT;
+                }
+            }
+            break;
+
+        case LCD_INIT_FINAL_WAIT:
+            if ((int32_t)(lcd_init_next_time - now) >= 0)
+                lcd_init_state = LCD_INIT_DONE;
+            break;
+
+        case LCD_INIT_DONE:
             break;
     }
 }

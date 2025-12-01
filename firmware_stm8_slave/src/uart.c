@@ -75,9 +75,6 @@ void UART1_Init(UART_InitTypeDef *cfg) {
     //-----
     //Enable UART
     //-----
-    // UART1->CR2 |= (1<<2);//enable RX
-    // UART1->CR2 |= (1<<3);//enable TX
-    // UART1->CR2 |= (1<<5);//enable UART 
     //Enable interrupt UART
     UART1->CR2 |= UART1_CR2_REN | UART1_CR2_TEN | UART1_CR2_RIEN | UART1_CR2_TIEN; //UART Enable + RX/TX Enable + RX Interrupt Enable  tx interrupt enabled
 
@@ -85,41 +82,6 @@ void UART1_Init(UART_InitTypeDef *cfg) {
     (void)UART1->SR;
     (void)UART1->DR;
 
-}
-
-void UART1_Write(uint8_t data)
-{
-    while(!(UART1->SR & UART1_SR_TXE)); //wait TXE 
-    UART1->DR = data;
-}
-
-void UART1_WriteString(const char *str)
-{
-    while(*str) {
-        UART1_Write((uint8_t)*str++);
-    }
-}
-
-void UART1_ReadString(char *buffer, uint8_t maxLen) {
-    uint8_t idx = 0;
-    
-    while(1) {
-        //wait for next character
-        while(!UART1_Available());
-
-        uint8_t c = UART1_Read();
-
-        //Stop if terminator found 
-        if( c == '\n' || c == '\r') {
-            break;
-        }
-
-        //store character
-        if(idx < maxLen - 1) { //leave space for null terminator
-            buffer[idx++] = c;
-        }
-    }
-    buffer[idx] = '\0'; //null terminate
 }
 
 uint8_t UART1_Read(void)
@@ -158,15 +120,15 @@ void UART1_WriteStringAsync(const char *s) {
     }
 }
 
-void UART1_WriteHex(uint8_t value)
+void UART1_WriteHex(uint32_t value)
 {
     const char hex_table[] = "0123456789ABCDEF";
 
-    uint8_t high = (value >> 4) & 0x0F;
-    uint8_t low  = value & 0x0F;
+    uint32_t high = (value >> 4) & 0x0F;
+    uint32_t low  = value & 0x0F;
 
-    UART1_Write(hex_table[high]);
-    UART1_Write(hex_table[low]);
+    UART1_WriteAsync(hex_table[high]);
+    UART1_WriteAsync(hex_table[low]);
 }
 
 void UART1_WriteHex8(uint8_t value)
@@ -178,5 +140,5 @@ void UART1_WriteHex8(uint8_t value)
     out[1] = hex[value & 0x0F];
     out[2] = '\0';
 
-    UART1_WriteString(out);
+    UART1_WriteStringAsync(out);
 }

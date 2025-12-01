@@ -83,7 +83,7 @@ extern volatile uint8_t uart1_tx_tail;
 void UART1_WriteAsync(uint8_t b);
 void UART1_WriteStringAsync(const char *s);
 
-void UART1_WriteHex(uint8_t value);
+void UART1_WriteHex(uint32_t value);
 void UART1_WriteHex8(uint8_t value);
 
 #define UART1_DISABLE_RX_INT()  (UART1->CR2 &= (uint8_t)~UART1_CR2_RIEN)
